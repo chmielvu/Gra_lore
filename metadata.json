@@ -1,0 +1,5 @@
+{
+  "name": "The Forge's Loom: Lore Enhancer",
+  "description": "An application to assist writers by analyzing their uploaded lore documents, enhancing existing content, and generating new, consistent content using AI.",
+  "requestFramePermissions": []
+}
