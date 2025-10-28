@@ -66,3 +66,73 @@ export const DownloadIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => 
         <line x1="12" x2="12" y1="15" y2="3"/>
     </svg>
 );
+
+export const RotateCcwIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+        <path d="M3 3v5h5"/>
+    </svg>
+);
+
+export const BrainCircuitIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M12 5a3 3 0 1 0-5.993.142"/>
+        <path d="M18 5a3 3 0 1 0-5.993.142"/>
+        <path d="M21 12a3 3 0 1 1-5.858-.142"/>
+        <path d="M15.142 12a3 3 0 1 1-6.142 0"/>
+        <path d="M9 12a3 3 0 1 1-5.858-.142"/>
+        <path d="M6.007 18.858A3 3 0 1 0 9 19"/>
+        <path d="M12.142 18.858A3 3 0 1 0 15 19"/>
+        <path d="M18.007 18.858A3 3 0 1 0 21 19"/>
+        <path d="M6.007 8.858A3 3 0 1 0 9 9"/>
+        <path d="M12 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M12 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M18.142 15a3 3 0 1 0-6.142 0"/>
+        <path d="M21 15.142A3 3 0 1 0 15 15"/>
+        <path d="M15 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M9 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M9 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M9 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M15 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+        <path d="M3.007 11.858A3 3 0 1 0 6 12"/>
+        <path d="M3.007 5.142A3 3 0 1 0 6 5"/>
+        <path d="M21.007 5.142A3 3 0 1 0 18 5"/>
+    </svg>
+);
+
+export const XIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M18 6 6 18"/>
+        <path d="m6 6 12 12"/>
+    </svg>
+);
+
+export const PaperclipIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.59a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+);
+
+export const SendIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+);
+
+
+export const ChevronRightIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="m9 18 6-6-6-6"/>
+    </svg>
+);
+
+export const CameraIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+        <circle cx="12" cy="13" r="3"/>
+    </svg>
+);
+
+export const PlayIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+);

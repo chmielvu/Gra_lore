@@ -4,9 +4,11 @@ import { UploadCloudIcon } from './icons';
 
 interface FileUploaderProps {
     onFileUpload: (file: File) => void;
+    title?: string;
+    subtitle?: string;
 }
 
-const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload }) => {
+const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload, title, subtitle }) => {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +49,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload }) => {
     };
 
     return (
-        <div className="w-full mt-4">
+        <div className="w-full">
             <div
                 className={`w-full p-6 border-2 border-dashed rounded-lg text-center transition-colors duration-300 ${isDragging ? 'border-brand-primary bg-brand-surface' : 'border-brand-secondary hover:border-brand-primary-hover'}`}
                 onDrop={handleDrop}
@@ -64,8 +66,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onFileUpload }) => {
                 />
                 <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center justify-center">
                     <UploadCloudIcon className="w-12 h-12 text-brand-secondary mb-3" />
-                    <h2 className="text-lg font-semibold text-brand-text mb-1">Upload New Material to Enhance</h2>
-                    <p className="text-sm text-brand-text-muted">Or drag & drop a PDF or Image to integrate it.</p>
+                    <h2 className="text-lg font-semibold text-brand-text mb-1">{title ?? 'Upload a File'}</h2>
+                    <p className="text-sm text-brand-text-muted">{subtitle ?? 'Or drag & drop a PDF or Image.'}</p>
                 </label>
             </div>
         </div>

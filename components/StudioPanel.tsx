@@ -1,61 +1,61 @@
 
 import React from 'react';
-import { Mode } from '../types';
 import GenerateContent from './GenerateContent';
 import EnhanceLore from './EnhanceLore';
+import { BrainCircuitIcon, BookUpIcon } from './icons';
+import type { ChatMessage } from '../types';
 
 interface StudioPanelProps {
-    mode: Mode;
-    setMode: (mode: Mode) => void;
-    generatedContent: string | null;
-    generatedImage: string | null;
     enhancementPlan: string | null;
     onGenerateContent: (contentType: string) => void;
     onPlanEnhancements: () => void;
     onExecutePlan: () => void;
-    onIntegrateMaterial: (file: File) => void;
-    onIntegrateProvidedNarrative: () => void;
     hasContentToEnhance: boolean;
+    // Chat props
+    chatHistory: ChatMessage[];
+    isSendingMessage: boolean;
+    onSendMessage: (prompt: string, file?: File) => void;
+    onGenerateImage: (messageId: number, prompt: string) => void;
+    onGenerateAudio: (messageId: number, text: string, characterId: string) => void;
 }
 
 const StudioPanel: React.FC<StudioPanelProps> = (props) => {
     return (
-        <div className="bg-brand-surface rounded-lg p-6 flex flex-col shadow-lg">
-            <div className="flex justify-center mb-6">
-                <div className="bg-brand-bg p-1 rounded-lg flex gap-1">
-                    <button
-                        onClick={() => props.setMode(Mode.Generate)}
-                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${props.mode === Mode.Generate ? 'bg-brand-primary text-white' : 'text-brand-text-muted hover:bg-brand-secondary'}`}
-                    >
-                        Generate New Content
-                    </button>
-                    <button
-                        onClick={() => props.setMode(Mode.Enhance)}
-                        className={`px-4 py-2 text-sm font-semibold rounded-md transition-colors ${props.mode === Mode.Enhance ? 'bg-brand-primary text-white' : 'text-brand-text-muted hover:bg-brand-secondary'}`}
-                    >
-                        Enhance Existing Lore
-                    </button>
+        <div className="bg-brand-surface rounded-lg p-6 flex flex-col shadow-lg space-y-6 h-full">
+            
+            {/* --- GENERATE / CHAT --- */}
+            <div className="flex flex-col flex-grow min-h-0">
+                <div className="flex items-center gap-3 mb-4">
+                    <BrainCircuitIcon className="w-6 h-6 text-brand-primary"/>
+                    <h2 className="text-xl font-bold text-brand-text">AI Creative Partner</h2>
                 </div>
+                <GenerateContent 
+                    onGenerateFromButtons={props.onGenerateContent}
+                    chatHistory={props.chatHistory}
+                    isSendingMessage={props.isSendingMessage}
+                    onSendMessage={props.onSendMessage}
+                    onGenerateImage={props.onGenerateImage}
+                    onGenerateAudio={props.onGenerateAudio}
+                />
             </div>
-            <div className="flex-grow flex flex-col">
-                {props.mode === Mode.Generate ? (
-                    <GenerateContent 
-                        onGenerate={props.onGenerateContent} 
-                        generatedContent={props.generatedContent}
-                        generatedImage={props.generatedImage}
-                    />
-                ) : (
-                    <EnhanceLore 
-                        enhancementPlan={props.enhancementPlan}
-                        onPlan={props.onPlanEnhancements}
-                        onExecute={props.onExecutePlan}
-                        onIntegrateMaterial={props.onIntegrateMaterial}
-                        onIntegrateProvidedNarrative={props.onIntegrateProvidedNarrative}
-                        canPlan={props.hasContentToEnhance}
-                        canExecute={!!props.enhancementPlan}
-                    />
-                )}
+            
+            <hr className="border-brand-secondary/50"/>
+            
+            {/* --- ENHANCE --- */}
+            <div className="flex flex-col">
+                 <div className="flex items-center gap-3 mb-4">
+                    <BookUpIcon className="w-6 h-6 text-brand-primary"/>
+                    <h2 className="text-xl font-bold text-brand-text">Enhance Existing Lore</h2>
+                </div>
+                <EnhanceLore 
+                    enhancementPlan={props.enhancementPlan}
+                    onPlan={props.onPlanEnhancements}
+                    onExecute={props.onExecutePlan}
+                    canPlan={props.hasContentToEnhance}
+                    canExecute={!!props.enhancementPlan}
+                />
             </div>
+
         </div>
     );
 };
