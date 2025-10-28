@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import GenerateContent from './GenerateContent';
 import EnhanceLore from './EnhanceLore';
@@ -17,6 +18,7 @@ interface StudioPanelProps {
     onSendMessage: (prompt: string, file?: File) => void;
     onGenerateImage: (messageId: number, prompt: string) => void;
     onGenerateAudio: (messageId: number, text: string, characterId: string) => void;
+    onApplyJsonFromChat: (jsonString: string) => void;
 }
 
 const StudioPanel: React.FC<StudioPanelProps> = (props) => {
@@ -36,6 +38,7 @@ const StudioPanel: React.FC<StudioPanelProps> = (props) => {
                     onSendMessage={props.onSendMessage}
                     onGenerateImage={props.onGenerateImage}
                     onGenerateAudio={props.onGenerateAudio}
+                    onApplyJsonFromChat={props.onApplyJsonFromChat}
                 />
             </div>
             

@@ -1,4 +1,5 @@
 
+
 import React, { useState, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import ContextPanel from './components/ContextPanel';
@@ -29,10 +30,9 @@ const fileToBase64 = (file: File): Promise<string> => {
 
 // Helper function to apply a JSON patch
 const applyJsonPatch = (
-    originalDoc: any, 
+    originalDoc: any,
     patch: Array<{ op: string; path: (string | number)[]; value: any }>
 ): any => {
-    // Use a deep copy to avoid mutating the original state directly
     const doc = JSON.parse(JSON.stringify(originalDoc));
 
     patch.forEach(({ op, path, value }) => {
@@ -41,37 +41,54 @@ const applyJsonPatch = (
             return;
         }
 
-        let current = doc;
-        // Traverse the path to find the parent of the target
-        for (let i = 0; i < path.length - 1; i++) {
-            current = current[path[i]];
-            if (current === undefined) {
-                console.error("Invalid path in patch:", path);
-                return; // Skip this operation if path is invalid
-            }
-        }
-
+        let parent = doc;
         const finalSegment = path[path.length - 1];
+
+        // Traverse to find the parent object/array, creating path segments for 'add' if necessary.
+        for (let i = 0; i < path.length - 1; i++) {
+            const segment = path[i];
+
+            if (parent[segment] === undefined || parent[segment] === null) {
+                // If a segment in the path doesn't exist, we can create it for 'add'.
+                if (op === 'add') {
+                    const nextSegment = path[i + 1];
+                    parent[segment] = typeof nextSegment === 'number' ? [] : {};
+                } else {
+                    // For 'replace', the path must exist.
+                    console.error(`Invalid path for '${op}': segment '${String(segment)}' does not exist.`, path);
+                    return; // Skip this invalid operation
+                }
+            }
+            parent = parent[segment];
+        }
 
         switch (op) {
             case 'replace':
-                 if (Array.isArray(current) && typeof finalSegment === 'number') {
-                    current[finalSegment] = value;
-                } else if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
-                    current[finalSegment] = value;
+                if (typeof parent === 'object' && parent !== null) {
+                    parent[finalSegment] = value;
                 } else {
-                     console.error("Invalid path for 'replace' op:", path);
+                    console.error("Invalid path for 'replace' op: parent is not an object.", path);
                 }
                 break;
+
             case 'add':
-                // For 'add', the spec is that the path points TO THE ARRAY itself.
-                const targetArray = path.length === 1 ? current[finalSegment] : current[finalSegment];
-                 if (Array.isArray(targetArray)) {
+                // Our AI uses 'add' to append to an array.
+                const targetArray = parent[finalSegment];
+                if (Array.isArray(targetArray)) {
                     targetArray.push(value);
+                } else if (targetArray === undefined) {
+                    // If the array doesn't exist at the final segment, create it.
+                    if (typeof parent === 'object' && parent !== null && !Array.isArray(parent)) {
+                       parent[finalSegment] = [value];
+                    } else {
+                        console.error("'add' operation failed: parent is not a valid object for creating a new property.", path);
+                    }
                 } else {
-                     console.error("Invalid path for 'add' op: target is not an array.", path, "TARGET:", targetArray);
+                    // This is an error because our AI should only 'add' to arrays or non-existent keys.
+                    console.error("Invalid path for 'add' op: target exists but is not an array.", path);
                 }
                 break;
+
             default:
                 console.warn(`Unsupported patch operation: ${op}`);
         }
@@ -262,6 +279,14 @@ const App: React.FC = () => {
             const patch = await geminiService.executePlan(loreData, enhancementPlan, (message) => {
                 setLoadingMessage(message);
             });
+
+            if (!patch || patch.length === 0) {
+                alert("The AI determined no changes were necessary for this plan.");
+                setEnhancementPlan(null);
+                setIsLoading(false);
+                setLoadingMessage('');
+                return;
+            }
             
             const updatedLore = applyJsonPatch(loreData, patch);
             
@@ -270,6 +295,7 @@ const App: React.FC = () => {
             setEnhancementPlan(null); // Clear the plan after execution
             alert("Enhancement plan executed successfully! The Lore Overview has been updated.");
 
+        // FIX: Corrected invalid 'catch' block syntax from 'catch (error) =>' to 'catch (error)'.
         } catch (error) {
             console.error("Error executing plan:", error);
             alert(`Failed to execute enhancement plan. ${error instanceof Error ? error.message : "The AI may have returned an invalid format."}`);
@@ -288,6 +314,88 @@ const App: React.FC = () => {
             alert("Lore Bible has been reverted to its original state.");
         }
     }, []);
+
+    const handleApplyJsonFromChat = useCallback((jsonString: string) => {
+        if (!loreData) return;
+
+        let newObject;
+        try {
+            newObject = JSON.parse(jsonString);
+        } catch (error) {
+            console.error("Failed to parse JSON from chat:", error);
+            alert("The selected content is not valid JSON and could not be applied.");
+            return;
+        }
+
+        if (!newObject || typeof newObject !== 'object' || !newObject.id) {
+            alert("The JSON object is invalid or missing an 'id' and cannot be added.");
+            return;
+        }
+
+        let path: (string | number)[] | null = null;
+        let objectType = 'item';
+
+        if (newObject.hasOwnProperty('intensity') && newObject.hasOwnProperty('ledgerImpact')) {
+            path = ['events'];
+            objectType = 'Event';
+        } else if (newObject.hasOwnProperty('atmosphere') && newObject.hasOwnProperty('sounds')) {
+            path = ['locations'];
+            objectType = 'Location';
+        } else if (newObject.hasOwnProperty('role_tag')) {
+            objectType = newObject.name || 'Character';
+            switch(newObject.role_tag) {
+                case 'Faculty':
+                    path = ['factions', 0, 'archetypes'];
+                    break;
+                case 'Prefect':
+                    path = ['factions', 1, 'archetypes'];
+                    break;
+                case 'Subject':
+                    path = ['factions', 2, 'archetypes'];
+                    break;
+            }
+        }
+
+        if (!path) {
+            alert("Could not automatically determine where to add this JSON object in the Lore Bible.");
+            return;
+        }
+        
+        let targetArray: any = loreData;
+        try {
+            for(const segment of path) {
+                targetArray = targetArray[segment];
+            }
+        } catch (e) {
+            targetArray = undefined;
+        }
+        
+        if (Array.isArray(targetArray) && targetArray.some(item => item.id === newObject.id)) {
+            if (!window.confirm(`An item with ID "${newObject.id}" already exists. Do you want to overwrite it?`)) {
+                return;
+            }
+            const index = targetArray.findIndex(item => item.id === newObject.id);
+            const replacePath = [...path, index];
+            const patch = [{ op: 'replace' as 'replace', path: replacePath, value: newObject }];
+            const updatedLore = applyJsonPatch(loreData, patch);
+            setLoreData(updatedLore);
+            setIsLoreModified(true);
+            alert(`Object with ID "${newObject.id}" has been updated in the working document.`);
+            return;
+        }
+
+        const patch = [{ op: 'add' as 'add', path: path, value: newObject }];
+        
+        try {
+            const updatedLore = applyJsonPatch(loreData, patch);
+            setLoreData(updatedLore);
+            setIsLoreModified(true);
+            alert(`New ${objectType} has been added to the working document! You can see the change in the "Live Working Document" tab.`);
+        } catch(error) {
+            console.error("Error applying JSON patch from chat:", error);
+            alert("An error occurred while trying to add the object to the document.");
+        }
+    }, [loreData]);
 
 
     return (
@@ -322,6 +430,7 @@ const App: React.FC = () => {
                                 onSendMessage={handleSendMessage}
                                 onGenerateImage={handleGenerateImageForMessage}
                                 onGenerateAudio={handleGenerateAudioForMessage}
+                                onApplyJsonFromChat={handleApplyJsonFromChat}
                             />
                         </div>
                     </div>

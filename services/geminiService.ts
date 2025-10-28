@@ -75,7 +75,7 @@ export async function startChatSession(loreData: any): Promise<Chat> {
 
         SPECIAL INSTRUCTIONS:
         1.  **JSON Generation:** When asked to generate new content (like a character or event), your output MUST ONLY be the new JSON object, without any surrounding text, explanations, or markdown formatting like \`\`\`json.
-        2.  **Visual Prompt Generation:** When asked to generate a visual prompt, analyze the lore and create a detailed, evocative prompt for an image generation AI. Your output MUST wrap the final, complete prompt string in [VISUAL_PROMPT] tags. For example: "[VISUAL_PROMPT]A detailed description...[/VISUAL_PROMPT]".
+        2.  **Visual Prompt Generation:** When asked to generate a visual prompt, you MUST consult the \`promptTemplates\` (specifically 'portrait_v2_explicit') and the \`assetManifest\` within the provided Lore Bible. Create a detailed, evocative prompt for an image generation AI by filling out the template for a specific character or scene. Your output MUST wrap the final, complete prompt string in [VISUAL_PROMPT] tags. For example: "[VISUAL_PROMPT]A detailed description based on the template...[/VISUAL_PROMPT]".
         3.  **Dialogue Generation:** When writing dialogue or simulating scenes, you MUST format character lines like this: Character Name: "Dialogue text." For example: Provost: "You will learn obedience." This format is critical.
         4.  **Conversational Responses:** For all other requests (questions, summaries), respond conversationally in markdown format.
         5.  **Contextual Attachments:** If the user provides an image or text file, use it as the primary contextual inspiration for your response.
@@ -118,7 +118,7 @@ export async function* sendMessageStream(chat: Chat, prompt: string, file?: File
 }
 
 export async function generateImage(prompt: string): Promise<string> {
-    const response = await generateWithRetry('generateImages', {
+    const response = await generateWithRetry('generateContent', {
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [
@@ -137,7 +137,7 @@ export async function generateImage(prompt: string): Promise<string> {
         return part.inlineData.data;
       }
     }
-    throw new Error('Image generation failed.');
+    throw new Error('Image generation failed: No image data found in the response.');
 }
 
 export async function generateSpeech(text: string, characterId: string, loreData: any): Promise<string> {
@@ -297,17 +297,22 @@ async function _runBrainstormers(analyses: { aspect: string; analysis: string }[
 // STEP 1.3: THE CRITIC
 async function _runCritic(creativeDirections: string): Promise<string> {
     const prompt = `
-        You are a "Critic" and story editor. You have been presented with three creative directions.
-        Your task is to evaluate them and select the single most promising one.
-        
-        CRITERIA:
-        1.  Narrative Potential: Which direction offers the most compelling new stories?
-        2.  Thematic Consistency: Which best enhances the core themes of the lore?
-        3.  Originality: Which is the most surprising and interesting?
+        You are a "Critic" and lead story editor. You have been presented with three creative directions. Your task is to critically evaluate them and select the single most promising one.
 
-        First, provide a brief, one-paragraph rationale for your choice. Then, on a new line, state the chosen direction's title EXACTLY as it was written (e.g., "Chosen Direction: Direction B: The Serpent's Coil").
+        **EVALUATION PROCESS:**
+        For each direction, you MUST provide a score from 1 (poor) to 10 (excellent) for the following criteria:
+        1.  **Narrative Potential:** How well does it offer compelling new stories, character arcs, and conflicts?
+        2.  **Thematic Consistency:** How well does it enhance the lore's core themes (Matriarchal Mirror, Freudian Threat, Intimacy Through Suffering)?
+        3.  **Originality:** How surprising, interesting, and non-cliché is the idea?
 
-        CREATIVE DIRECTIONS:
+        **JUSTIFICATION:**
+        After scoring all three, provide a detailed justification explaining why your chosen direction is the superior path forward. Synthesize the scores and your qualitative judgment to make a compelling case for your selection.
+
+        **FINAL SELECTION:**
+        Finally, on a new line, state the chosen direction's title EXACTLY as it was written (e.g., "Chosen Direction: Direction B: The Serpent's Coil").
+
+        ---
+        **CREATIVE DIRECTIONS TO EVALUATE:**
         ---
         ${creativeDirections}
         ---

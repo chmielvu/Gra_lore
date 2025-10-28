@@ -1,6 +1,7 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { MapIcon, UserIcon, UsersIcon, CalendarIcon, ImageIcon, XIcon, PaperclipIcon, SendIcon, CameraIcon, PlayIcon } from './icons';
+import { MapIcon, UserIcon, UsersIcon, CalendarIcon, ImageIcon, XIcon, PaperclipIcon, SendIcon, CameraIcon, PlayIcon, CommitIcon } from './icons';
 import type { ChatMessage, ChatPart } from '../types';
 
 // --- Audio Playback Helpers ---
@@ -48,11 +49,12 @@ interface GenerateContentProps {
     onSendMessage: (prompt: string, file?: File) => void;
     onGenerateImage: (messageId: number, prompt: string) => void;
     onGenerateAudio: (messageId: number, text: string, characterId: string) => void;
+    onApplyJsonFromChat: (jsonString: string) => void;
 }
 
 const buttons = [
     { label: 'New Location', value: 'Location', icon: MapIcon },
-    { label: 'New Educator', value: 'Educator', icon: UserIcon },
+    { label: 'New Educator', value: 'Faculty', icon: UserIcon },
     { label: 'New Subject', value: 'Subject', icon: UsersIcon },
     { label: 'New Event', value: 'Event', icon: CalendarIcon },
     { label: 'New Visual Prompt', value: 'Visual Prompt', icon: ImageIcon },
@@ -127,12 +129,41 @@ const ChatInput: React.FC<{
     );
 };
 
+// Helper to identify "creative" AI responses for special styling
+const isCreativeContent = (text: string): boolean => {
+    // Check for markdown titles, lists, or JSON structure, which indicate a structured creative output
+    const hasMarkdownTitle = /^#+\s/m.test(text);
+    const hasMarkdownList = /^\s*[-*+]\s/m.test(text);
+    const isLikelyJson = (text.trim().startsWith('{') && text.trim().endsWith('}')) || (text.trim().startsWith('[') && text.trim().endsWith(']'));
+    
+    // Simple heuristic: if it has structure or is long, it's probably creative content
+    return hasMarkdownTitle || hasMarkdownList || isLikelyJson || text.length > 200;
+};
+
+const isLikelyJson = (text: string): boolean => {
+    const trimmed = text.trim();
+    if (!((trimmed.startsWith('{') && trimmed.endsWith('}')) || (trimmed.startsWith('[') && trimmed.endsWith(']')))) {
+        return false;
+    }
+    try {
+        JSON.parse(trimmed);
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+
 const ChatMessageRenderer: React.FC<{ 
     message: ChatMessage,
+    isSendingMessage: boolean;
     onGenerateImage: GenerateContentProps['onGenerateImage'],
     onGenerateAudio: GenerateContentProps['onGenerateAudio'],
- }> = ({ message, onGenerateImage, onGenerateAudio }) => {
+    onApplyJsonFromChat: GenerateContentProps['onApplyJsonFromChat'],
+ }> = ({ message, isSendingMessage, onGenerateImage, onGenerateAudio, onApplyJsonFromChat }) => {
     const textContent = message.parts.map(p => 'text' in p ? p.text : '').join('');
+    const isJsonContent = message.role === 'model' && isLikelyJson(textContent);
+
     
     // --- Visual Prompt Logic ---
     const visualPromptMatch = textContent.match(/\[VISUAL_PROMPT\]([\s\S]*?)\[\/VISUAL_PROMPT\]/);
@@ -171,7 +202,7 @@ const ChatMessageRenderer: React.FC<{
                         <button 
                             onClick={() => onGenerateAudio(message.id, dialogue, character.toLowerCase())}
                             className="p-1.5 rounded-full bg-brand-secondary hover:bg-brand-primary-hover disabled:opacity-50"
-                            disabled={!!message.isGeneratingMedia}
+                            disabled={!!message.isGeneratingMedia || isSendingMessage}
                         >
                             <PlayIcon className="w-3 h-3"/>
                         </button>
@@ -189,18 +220,26 @@ const ChatMessageRenderer: React.FC<{
         return elements.length > 0 ? <>{elements}</> : <>{text}</>;
     }
     
+    const accentClass = message.role === 'model' && isCreativeContent(textContent) 
+        ? 'border-l-2 border-brand-primary' 
+        : '';
+
     return (
-        <div className={`p-3 rounded-lg max-w-full break-words ${message.role === 'user' ? 'bg-brand-primary/20 self-end' : 'bg-brand-surface self-start'}`}>
+        <div className={`p-3 rounded-lg max-w-full break-words ${message.role === 'user' ? 'bg-brand-primary/20 self-end' : 'bg-brand-surface self-start'} ${accentClass}`}>
             {message.fileDataUrl && <img src={message.fileDataUrl} alt="Attached file" className="rounded-lg mb-2 max-w-xs" />}
             
-            {renderTextWithDialogueButtons(textWithoutVisualPrompt)}
+            {isJsonContent ? (
+                <pre className="whitespace-pre-wrap text-xs font-mono">{textContent}</pre>
+            ) : (
+                <div className="whitespace-pre-wrap">{renderTextWithDialogueButtons(textWithoutVisualPrompt)}</div>
+            )}
 
             {visualPrompt && (
                 <div className="mt-3 pt-3 border-t border-brand-primary/30">
                     <p className="text-sm italic text-brand-text-muted">{visualPrompt}</p>
                     <button 
                         onClick={() => onGenerateImage(message.id, visualPrompt)}
-                        disabled={!!message.imageUrl || !!message.isGeneratingMedia}
+                        disabled={!!message.imageUrl || !!message.isGeneratingMedia || isSendingMessage}
                         className="mt-2 flex items-center gap-2 bg-brand-primary hover:bg-brand-primary-hover disabled:bg-brand-secondary disabled:cursor-not-allowed text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition-colors"
                     >
                        <CameraIcon className="w-4 h-4" />
@@ -209,6 +248,17 @@ const ChatMessageRenderer: React.FC<{
                 </div>
             )}
             
+            {isJsonContent && (
+                 <button 
+                    onClick={() => onApplyJsonFromChat(textContent)}
+                    disabled={isSendingMessage}
+                    className="mt-3 flex items-center gap-2 bg-brand-secondary hover:bg-brand-primary-hover disabled:bg-brand-secondary disabled:cursor-not-allowed text-white font-semibold py-1.5 px-3 rounded-lg text-xs transition-colors"
+                >
+                   <CommitIcon className="w-4 h-4" />
+                   Apply to Live Document
+                </button>
+            )}
+
             {message.imageUrl && (
                 <div className="mt-3">
                     <img src={message.imageUrl} alt="Generated content" className="rounded-lg max-w-full" />
@@ -247,12 +297,20 @@ const GenerateContent: React.FC<GenerateContentProps> = (props) => {
             
             {/* Chat History */}
              <div ref={chatContainerRef} className="flex-grow overflow-y-auto space-y-4 pr-2 -mr-2">
+                {props.chatHistory.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                        <p className="text-brand-text-muted">The AI Creative Partner is ready.</p>
+                        <p className="text-xs text-brand-text-muted">Use the buttons above to generate new content, or ask a question below.</p>
+                    </div>
+                )}
                 {props.chatHistory.map((message) => (
                     <div key={message.id} className="flex flex-col">
                         <ChatMessageRenderer 
                             message={message} 
+                            isSendingMessage={props.isSendingMessage}
                             onGenerateImage={props.onGenerateImage} 
                             onGenerateAudio={props.onGenerateAudio}
+                            onApplyJsonFromChat={props.onApplyJsonFromChat}
                         />
                     </div>
                 ))}
